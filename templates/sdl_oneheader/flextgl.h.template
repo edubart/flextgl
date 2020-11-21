@@ -1,0 +1,188 @@
+@require(passthru, functions, enums, options, version, extensions, args)
+#ifndef __gl_h_
+#define __gl_h_
+/*
+    This file was generated using https://github.com/mosra/flextgl:
+
+        path/to/flextGLgen.py @args
+
+    Do not edit directly, modify the template or profile and regenerate.
+*/
+
+#include <KHR/khrplatform.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Function declaration macros - to move into glplatform.h */
+
+#if defined(_WIN32) && !defined(APIENTRY) && !defined(__CYGWIN__) && !defined(__SCITECH_SNAP__)
+#define WIN32_LEAN_AND_MEAN 1
+#ifndef WINAPI
+#define WINAPI __stdcall
+#endif
+#define APIENTRY WINAPI
+#endif
+
+#ifndef APIENTRY
+#define APIENTRY
+#endif
+#ifndef APIENTRYP
+#define APIENTRYP APIENTRY *
+#endif
+#ifndef GLAPI
+#define GLAPI extern
+#endif
+
+/* ------------------------------- DATA TYPES ------------------------------ */
+
+@passthru
+
+/* ---------------------------------- ENUMS -------------------------------- */
+
+@enums
+
+/* -------------------------- FUNCTION PROTOTYPES -------------------------- */
+
+@for cat,funcs in functions:
+@if funcs:
+/* GL_@cat */
+
+    @if cat in []:
+        @for f in funcs:
+GLAPI @f.returntype APIENTRY gl@f.name (@f.param_list_string());
+        @end
+    @else:
+        @for f in funcs:
+typedef @f.returntype (APIENTRY PFNGL@f.name.upper()_PROC (@f.param_list_string()));
+        @end
+
+        @for f in funcs:
+GLAPI PFNGL@f.name.upper()_PROC* glpf@f.name;
+        @end
+
+        @for f in funcs:
+#define gl@f.name glpf@f.name
+        @end
+    @end
+
+@end
+@end
+/* -------------------------- CATEGORY DEFINES ----------------------------- */
+
+@for cat,funcs in functions:
+#define GL_@cat
+@end
+
+@if extensions:
+/* --------------------- FLAGS FOR OPTIONAL EXTENSIONS --------------------- */
+
+@for extension,required in extensions:
+extern int FLEXT_@extension;
+@end
+
+@end
+int flextInit(void);
+
+#define FLEXT_MAJOR_VERSION @version.major!s
+#define FLEXT_MINOR_VERSION @version.minor!s
+@if version.profile == 'core':
+#define FLEXT_CORE_PROFILE 1
+@else:
+#define FLEXT_CORE_PROFILE 0
+@end
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
+#ifdef FLEXTGL_IMPL
+
+#include <SDL2/SDL.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void flextLoadOpenGLFunctions(void) {
+    @for category,funcs in functions:
+    @if funcs:
+    @if category not in []:
+    /* GL_@category */
+    @for f in funcs:
+    glpf@f.name = (PFNGL@f.name.upper()_PROC*)SDL_GL_GetProcAddress("gl@f.name");
+    @end
+
+    @end
+    @end
+    @end
+}
+
+int flextInit(void) {
+    int major;
+    int minor;
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
+
+    flextLoadOpenGLFunctions();
+
+    /* Check for minimal version and profile */
+
+    if(major * 10 + minor < @version.int_value()!s) {
+        return SDL_SetError("OpenGL context hasn't the expected version @version.major!s.@version.minor!s.");
+    }
+    @if version.int_value() >= 32 and not version.profile == 'core':
+
+    GLint profile;
+    glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profile);
+    if((profile & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) == 0) {
+        return SDL_SetError("This application requires a compatibility profile");
+    }
+    @end
+
+    @if extensions:
+    /* --- Check for extensions --- */
+
+    @for extension,required in extensions:
+    @if required:
+    if(!SDL_GL_ExtensionSupported("GL_@extension")) {
+        return SDL_SetError("OpenGL extension @extension not supported.");
+    }
+    @else:
+    if(SDL_GL_ExtensionSupported("GL_@extension")) {
+        FLEXT_@extension = GL_TRUE;
+    }
+    @end
+    @end
+
+    @end
+    return 0;
+}
+
+@if extensions:
+/* Extension flag definitions */
+@for extension,required in extensions:
+int FLEXT_@extension = GL_FALSE;
+@end
+
+@end
+/* Function pointer definitions */
+
+@for category,funcs in functions:
+@if len(funcs) > 0 and category not in [ ]:
+/* GL_@category */
+
+@for f in funcs:
+PFNGL@f.name.upper()_PROC* glpf@f.name = NULL;
+@end
+
+@end
+@end
+#ifdef __cplusplus
+}
+#endif
+
+#endif
