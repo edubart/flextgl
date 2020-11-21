@@ -8,8 +8,6 @@
     Do not edit directly, modify the template or profile and regenerate.
 */
 
-#include <KHR/khrplatform.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +31,79 @@ extern "C" {
 #ifndef GLAPI
 #define GLAPI extern
 #endif
+
+
+/* ------------------------- KHR platform types ---------------------------- */
+
+#include <stddef.h> /* For size_t. */
+#ifdef _MSC_VER
+    #if defined(__clang__)
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wlanguage-extension-token"
+        #pragma GCC diagnostic ignored "-Wc++11-long-long"
+    #endif
+    typedef   signed __int8  khronos_int8_t;
+    typedef unsigned __int8  khronos_uint8_t;
+    typedef   signed __int16 khronos_int16_t;
+    typedef unsigned __int16 khronos_uint16_t;
+    typedef   signed __int32 khronos_int32_t;
+    typedef unsigned __int32 khronos_uint32_t;
+    typedef   signed __int64 khronos_int64_t;
+    typedef unsigned __int64 khronos_uint64_t;
+    #if defined(__clang__)
+        #pragma GCC diagnostic pop
+    #endif
+#else
+    #define MA_HAS_STDINT
+    #include <stdint.h>
+    typedef int8_t   khronos_int8_t;
+    typedef uint8_t  khronos_uint8_t;
+    typedef int16_t  khronos_int16_t;
+    typedef uint16_t khronos_uint16_t;
+    typedef int32_t  khronos_int32_t;
+    typedef uint32_t khronos_uint32_t;
+    typedef int64_t  khronos_int64_t;
+    typedef uint64_t khronos_uint64_t;
+#endif
+
+#ifdef MA_HAS_STDINT
+    typedef uintptr_t khronos_uintptr_t;
+    typedef intptr_t  khronos_intptr_t;
+    typedef uintptr_t khronos_usize_t;
+    typedef intptr_t  khronos_ssize_t;
+#else
+    #if defined(_WIN32)
+        #if defined(_WIN64)
+            typedef khronos_uint64_t khronos_uintptr_t;
+            typedef khronos_int64_t  khronos_intptr_t;
+            typedef khronos_uint64_t khronos_usize_t;
+            typedef khronos_int64_t  khronos_ssize_t;
+        #else
+            typedef khronos_uint32_t khronos_uintptr_t;
+            typedef khronos_int32_t  khronos_intptr_t;
+            typedef khronos_uint32_t khronos_usize_t;
+            typedef khronos_int32_t  khronos_ssize_t;
+        #endif
+    #elif defined(__GNUC__)
+        #if defined(__LP64__)
+            typedef khronos_uint64_t khronos_uintptr_t;
+            typedef khronos_int64_t  khronos_intptr_t;
+            typedef khronos_uint64_t khronos_usize_t;
+            typedef khronos_int64_t  khronos_ssize_t;
+        #else
+            typedef khronos_uint32_t khronos_uintptr_t;
+            typedef khronos_int32_t  khronos_intptr_t;
+            typedef khronos_uint32_t khronos_usize_t;
+            typedef khronos_int32_t  khronos_ssize_t;
+        #endif
+    #else
+        typedef khronos_uint64_t khronos_uintptr_t;
+        typedef khronos_int64_t  khronos_intptr_t;
+        typedef khronos_uint64_t khronos_usize_t;   /* Fallback. */
+        typedef khronos_int64_t  khronos_ssize_t;
+    #endif
+#endif
+typedef float khronos_float_t;
 
 /* ------------------------------- DATA TYPES ------------------------------ */
 
